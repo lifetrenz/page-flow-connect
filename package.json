@@ -1,0 +1,28 @@
+{
+  "name": "@lifetrenz/page-flow",
+  "version": "0.1.0",
+  "description": "Client for the Page-Flow scan and print agent: a framework-neutral SDK and Angular services.",
+  "license": "MIT",
+  "private": false,
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/common": "^17.0.0",
+    "@angular/core": "^17.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "module": "fesm2022/lifetrenz-page-flow.mjs",
+  "typings": "index.d.ts",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./index.d.ts",
+      "esm2022": "./esm2022/lifetrenz-page-flow.mjs",
+      "esm": "./esm2022/lifetrenz-page-flow.mjs",
+      "default": "./fesm2022/lifetrenz-page-flow.mjs"
+    }
+  }
+}
