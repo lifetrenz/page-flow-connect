@@ -1,6 +1,6 @@
 {
   "name": "@lifetrenz/page-flow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Client for the Page-Flow scan and print agent: a framework-neutral SDK and Angular services.",
   "license": "MIT",
   "private": false,
@@ -11,6 +11,14 @@
   },
   "dependencies": {
     "tslib": "^2.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lifetrenz/page-flow-connect.git"
+  },
+  "homepage": "https://github.com/lifetrenz/page-flow-connect#readme",
+  "bugs": {
+    "url": "https://github.com/lifetrenz/page-flow-connect/issues"
   },
   "module": "fesm2022/lifetrenz-page-flow.mjs",
   "typings": "index.d.ts",
