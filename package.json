@@ -1,6 +1,6 @@
 {
   "name": "@lifetrenz/page-flow",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Client for the Page-Flow scan and print agent: a framework-neutral SDK and Angular services.",
   "license": "MIT",
   "private": false,

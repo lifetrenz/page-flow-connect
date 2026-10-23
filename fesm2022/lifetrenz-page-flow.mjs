@@ -30,10 +30,13 @@ class PageFlowError extends Error {
 }
 
 const PAGE_FLOW_DEFAULT_PORT = 52180;
+const PAGE_FLOW_DEFAULT_HTTPS_PORT = 52181;
 /** The agent listens on loopback only, so the host is fixed. */
 const PAGE_FLOW_HOST = '127.0.0.1';
 const DEFAULT_PAGE_FLOW_SETTINGS = {
     port: PAGE_FLOW_DEFAULT_PORT,
+    httpsPort: PAGE_FLOW_DEFAULT_HTTPS_PORT,
+    useHttps: true,
     pairingToken: '',
 };
 function isValidPageFlowPort(value) {
@@ -42,9 +45,16 @@ function isValidPageFlowPort(value) {
 function pageFlowBaseUrl(port) {
     return `http://${PAGE_FLOW_HOST}:${port}`;
 }
+function pageFlowHttpsBaseUrl(port) {
+    return `https://${PAGE_FLOW_HOST}:${port}`;
+}
+/** The base URL the client calls: HTTPS when chosen, otherwise plain HTTP. */
+function pageFlowConnectionUrl(settings) {
+    return settings.useHttps ? pageFlowHttpsBaseUrl(settings.httpsPort) : pageFlowBaseUrl(settings.port);
+}
 /**
  * Reads settings saved as JSON. A missing, unreadable or invalid value falls back to the defaults,
- * so the client always has a usable port. The caller decides where the text comes from.
+ * so the client always has usable ports. The caller decides where the text comes from.
  */
 function parsePageFlowSettings(raw) {
     if (!raw) {
@@ -57,19 +67,34 @@ function parsePageFlowSettings(raw) {
     catch {
         return { ...DEFAULT_PAGE_FLOW_SETTINGS };
     }
-    const port = parsed?.port;
+    const port = isValidPageFlowPort(parsed?.port) ? parsed?.port : DEFAULT_PAGE_FLOW_SETTINGS.port;
+    const savedHttpsPort = isValidPageFlowPort(parsed?.httpsPort) ? parsed?.httpsPort : undefined;
+    // The two ports must differ. A saved HTTPS port that matches the HTTP port falls back to a default that does not.
+    const fallbackHttps = port === DEFAULT_PAGE_FLOW_SETTINGS.httpsPort ? DEFAULT_PAGE_FLOW_SETTINGS.port : DEFAULT_PAGE_FLOW_SETTINGS.httpsPort;
+    const httpsPort = savedHttpsPort !== undefined && savedHttpsPort !== port ? savedHttpsPort : fallbackHttps;
+    const useHttps = typeof parsed?.useHttps === 'boolean' ? parsed.useHttps : DEFAULT_PAGE_FLOW_SETTINGS.useHttps;
     const pairingToken = parsed?.pairingToken;
     return {
-        port: isValidPageFlowPort(port) ? port : DEFAULT_PAGE_FLOW_SETTINGS.port,
+        port,
+        httpsPort,
+        useHttps,
         pairingToken: typeof pairingToken === 'string' ? pairingToken : '',
     };
 }
-/** Turns settings into the JSON text to store. Throws a RangeError for a port out of range. */
+/** Turns settings into the JSON text to store. Throws a RangeError for ports that are invalid or equal. */
 function serializePageFlowSettings(settings) {
-    if (!isValidPageFlowPort(settings.port)) {
-        throw new RangeError('The port must be a whole number from 1 to 65535.');
+    if (!isValidPageFlowPort(settings.port) || !isValidPageFlowPort(settings.httpsPort)) {
+        throw new RangeError('The ports must be whole numbers from 1 to 65535.');
     }
-    return JSON.stringify({ port: settings.port, pairingToken: settings.pairingToken.trim() });
+    if (settings.port === settings.httpsPort) {
+        throw new RangeError('The HTTP and HTTPS ports must be different.');
+    }
+    return JSON.stringify({
+        port: settings.port,
+        httpsPort: settings.httpsPort,
+        useHttps: settings.useHttps === true,
+        pairingToken: settings.pairingToken.trim(),
+    });
 }
 
 // Synced from the Page-Flow repository (sdk/src). Edit it there, then run npm run sync:sdk.
@@ -210,12 +235,12 @@ class PageFlowClient {
         }
     }
     connection() {
-        const { port, pairingToken } = this.settings();
-        const token = pairingToken.trim();
+        const settings = this.settings();
+        const token = settings.pairingToken.trim();
         if (!token) {
             throw new PageFlowError('not_paired', 'Add the Page-Flow pairing token in the settings.', false, 0);
         }
-        return { baseUrl: pageFlowBaseUrl(port), token };
+        return { baseUrl: pageFlowConnectionUrl(settings), token };
     }
     async readJson(response) {
         try {
@@ -411,6 +436,91 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "17.3.12", ngImpo
             args: [{ providedIn: 'root' }]
         }] });
 
+/**
+ * Where the Page-Flow installer is downloaded from. Empty until the release location is set; the
+ * screen then tells the person to ask IT for the installer.
+ */
+const PAGE_FLOW_DOWNLOAD_URL = new InjectionToken('PAGE_FLOW_DOWNLOAD_URL', {
+    providedIn: 'root',
+    factory: () => '',
+});
+/** The link the installer registers. It starts the agent, and does nothing else. */
+const PAGE_FLOW_LAUNCH_LINK = 'page-flow://launch';
+/** How long to wait for the system to take the link before deciding no program is installed. */
+const LAUNCH_WAIT_MS = 1500;
+/** How long to wait for a started agent to answer. */
+const START_TIMEOUT_MS = 20000;
+const START_POLL_MS = 1000;
+/**
+ * Starts the Page-Flow agent when it is installed but not running. A browser cannot ask whether
+ * a program is installed, so this uses the usual check: hand the link to the system, then see
+ * whether the page lost focus. If it did not, no program took the link.
+ */
+class PageFlowLauncherService {
+    constructor() {
+        this.pageFlow = inject(PageFlowService);
+        this.downloadUrl = inject(PAGE_FLOW_DOWNLOAD_URL);
+    }
+    requestLaunch() {
+        return new Promise((resolve) => {
+            let settled = false;
+            const frame = document.createElement('iframe');
+            frame.style.display = 'none';
+            const finish = (outcome) => {
+                if (settled)
+                    return;
+                settled = true;
+                clearTimeout(timer);
+                window.removeEventListener('blur', onAway);
+                document.removeEventListener('visibilitychange', onVisibility);
+                frame.remove();
+                resolve(outcome);
+            };
+            // Focus moving into the hidden frame also fires blur. Only a program taking focus leaves the page without it.
+            const onAway = () => setTimeout(() => {
+                if (!document.hasFocus())
+                    finish('started');
+            }, 200);
+            const onVisibility = () => {
+                if (document.hidden)
+                    finish('started');
+            };
+            const timer = setTimeout(() => finish('not-installed'), LAUNCH_WAIT_MS);
+            window.addEventListener('blur', onAway);
+            document.addEventListener('visibilitychange', onVisibility);
+            document.body.appendChild(frame);
+            frame.src = PAGE_FLOW_LAUNCH_LINK;
+        });
+    }
+    /** Polls the agent until it answers, or gives up after the start timeout. */
+    async waitUntilReachable() {
+        const deadline = Date.now() + START_TIMEOUT_MS;
+        while (Date.now() < deadline) {
+            if (await this.agentAnswers())
+                return true;
+            await new Promise((resolve) => setTimeout(resolve, START_POLL_MS));
+        }
+        return false;
+    }
+    async agentAnswers() {
+        try {
+            await this.pageFlow.client.health();
+            return true;
+        }
+        catch (error) {
+            // An unreachable or slow agent is not up yet. Any other answer means it is running.
+            const code = error?.code;
+            return code !== 'agent_unreachable' && code !== 'agent_timeout';
+        }
+    }
+    static { this.ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "17.3.12", ngImport: i0, type: PageFlowLauncherService, deps: [], target: i0.ɵɵFactoryTarget.Injectable }); }
+    static { this.ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "17.3.12", ngImport: i0, type: PageFlowLauncherService, providedIn: 'root' }); }
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "17.3.12", ngImport: i0, type: PageFlowLauncherService, decorators: [{
+            type: Injectable,
+            args: [{ providedIn: 'root' }]
+        }] });
+
 /*
  * Public API of @lifetrenz/page-flow.
  * The SDK (framework-neutral) and the Angular binding are both exported from here.
@@ -420,5 +530,5 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "17.3.12", ngImpo
  * Generated bundle index. Do not edit.
  */
 
-export { DEFAULT_PAGE_FLOW_SETTINGS, DEFAULT_REQUEST_TIMEOUT_MS, PAGE_FLOW_DEFAULT_PORT, PAGE_FLOW_FETCH, PAGE_FLOW_HOST, PageFlowClient, PageFlowError, PageFlowService, PageFlowSettingsStore, ScanDocument, ScanUtilityService, isValidPageFlowPort, pageFlowBaseUrl, parsePageFlowSettings, serializePageFlowSettings };
+export { DEFAULT_PAGE_FLOW_SETTINGS, DEFAULT_REQUEST_TIMEOUT_MS, PAGE_FLOW_DEFAULT_HTTPS_PORT, PAGE_FLOW_DEFAULT_PORT, PAGE_FLOW_DOWNLOAD_URL, PAGE_FLOW_FETCH, PAGE_FLOW_HOST, PAGE_FLOW_LAUNCH_LINK, PageFlowClient, PageFlowError, PageFlowLauncherService, PageFlowService, PageFlowSettingsStore, ScanDocument, ScanUtilityService, isValidPageFlowPort, pageFlowBaseUrl, pageFlowConnectionUrl, pageFlowHttpsBaseUrl, parsePageFlowSettings, serializePageFlowSettings };
 //# sourceMappingURL=lifetrenz-page-flow.mjs.map
