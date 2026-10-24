@@ -19,7 +19,8 @@ export type PageFlowScanArea = 'entire' | 'letter' | 'a4' | '4x6' | '5x7';
 export type PageFlowScanColour = 'colour' | 'grayscale' | 'gray' | 'bw';
 export type PageFlowScanFormat = 'pdf' | 'jpeg';
 export interface PageFlowScanOptions {
-    scanner_id: string;
+    /** Absent, the agent uses its default scanner. */
+    scanner_id?: string;
     preset?: PageFlowScanPreset;
     area?: PageFlowScanArea;
     colour?: PageFlowScanColour;
@@ -31,7 +32,8 @@ export type PageFlowOrientation = 'portrait' | 'landscape';
 export type PageFlowQuality = 'best' | 'normal' | 'low';
 export type PageFlowPaper = 'letter' | 'legal' | 'statement' | 'executive' | 'a4' | 'a5' | 'b5-jis' | 'envelope-10' | 'envelope-dl' | 'envelope-c6' | 'japanese-postcard' | 'a6' | 'chou-3' | 'chou-4' | '2l' | '89x127' | '4x6' | '5x7' | '8.5x13' | '8x10' | 'b5-iso';
 export interface PageFlowPrintOptions {
-    printer_id: string;
+    /** Absent, the agent uses its default printer. */
+    printer_id?: string;
     copies?: number;
     colour?: PageFlowPrintColour;
     orientation?: PageFlowOrientation;

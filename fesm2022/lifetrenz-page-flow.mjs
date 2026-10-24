@@ -266,8 +266,9 @@ function jobPath(jobId, printerId) {
     return `/v1/print/${encodeURIComponent(jobId)}?${query.toString()}`;
 }
 function printQuery(options) {
-    const query = new URLSearchParams({ printer_id: options.printer_id });
+    const query = new URLSearchParams();
     const optional = {
+        printer_id: options.printer_id,
         copies: options.copies,
         colour: options.colour,
         orientation: options.orientation,
