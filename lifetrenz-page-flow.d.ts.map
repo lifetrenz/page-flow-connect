@@ -1,1 +1,1 @@
-{"version":3,"file":"lifetrenz-page-flow.d.ts","sourceRoot":"","sources":["../../projects/page-flow/src/lifetrenz-page-flow.ts"],"names":[],"mappings":"AAAA;;GAEG;;AAEH,cAAc,cAAc,CAAC"}
+{"version":3,"file":"lifetrenz-page-flow.d.ts","sourceRoot":"","sources":["../src/lifetrenz-page-flow.ts"],"names":[],"mappings":"AAAA;;GAEG;;AAEH,cAAc,cAAc,CAAC"}

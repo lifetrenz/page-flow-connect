@@ -1,13 +1,17 @@
 {
   "name": "@lifetrenz/page-flow",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Client for the Page-Flow scan and print agent: a framework-neutral SDK and Angular services.",
   "license": "MIT",
   "private": false,
   "sideEffects": false,
   "peerDependencies": {
+    "@angular/animations": "^17.0.0",
     "@angular/common": "^17.0.0",
-    "@angular/core": "^17.0.0"
+    "@angular/core": "^17.0.0",
+    "@angular/forms": "^17.0.0",
+    "@angular/platform-browser": "^17.0.0",
+    "primeng": "^17.2.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
