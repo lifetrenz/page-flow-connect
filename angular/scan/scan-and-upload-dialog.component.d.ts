@@ -61,6 +61,7 @@ export declare class ScanAndUploadDialogComponent implements OnChanges {
     upload(): void;
     close(): Promise<void>;
     private scanSinglePage;
+    private convertedPage;
     private addDocumentPage;
     /** Shows the scan and keeps it for upload. A PDF is previewed in a frame, a JPEG as an image. */
     private showResult;
