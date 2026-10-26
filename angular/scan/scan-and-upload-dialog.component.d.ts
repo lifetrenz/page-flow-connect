@@ -3,6 +3,7 @@ import { SafeResourceUrl } from "@angular/platform-browser";
 import { PageFlowDevice, PageFlowScanColour } from "../../sdk/models";
 import { PageFlowLauncherService } from "../page-flow-launcher.service";
 import { ScanDocument } from "../scan-utility.service";
+import { ClientOs } from "../download/installer-link";
 import { ScanMode, ScanOutput } from "./scan-plan";
 import * as i0 from "@angular/core";
 interface ScanPreview {
@@ -22,6 +23,8 @@ export declare class ScanAndUploadDialogComponent implements OnChanges {
     private readonly scanUtility;
     private readonly sanitizer;
     readonly launcher: PageFlowLauncherService;
+    /** The system the person is on, which decides the installer link. */
+    readonly os: ClientOs;
     readonly dpi = 300;
     scanners: PageFlowDevice[];
     scannerId: string | null;
@@ -45,7 +48,10 @@ export declare class ScanAndUploadDialogComponent implements OnChanges {
     get bmpAllowed(): boolean;
     get canUpload(): boolean;
     setMode(mode: ScanMode): void;
+    /** The installer link for this system, or null when there is none. */
+    get installerHref(): string | null;
     get canDownload(): boolean;
+    get osName(): string;
     loadScanners(): Promise<void>;
     /**
      * Starts the agent if it is installed but not running. If no program takes the link, the agent

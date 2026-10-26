@@ -1,8 +1,8 @@
 import { InjectionToken } from '@angular/core';
 import * as i0 from "@angular/core";
 /**
- * Where the Page-Flow installer is downloaded from. Empty until the release location is set; the
- * screen then tells the person to ask IT for the installer.
+ * An override for the Windows installer link. Empty means the default GitHub release link, which
+ * is used for Windows only; other systems get a "not yet available" message.
  */
 export declare const PAGE_FLOW_DOWNLOAD_URL: InjectionToken<string>;
 /** The link the installer registers. It starts the agent, and does nothing else. */
