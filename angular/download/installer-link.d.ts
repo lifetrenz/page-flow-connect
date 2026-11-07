@@ -7,8 +7,8 @@ export interface ClientPlatform {
     };
     userAgent?: string;
 }
-/** The newest Windows installer, published as a GitHub release asset under a fixed name. */
-export declare const PAGE_FLOW_WINDOWS_INSTALLER_URL = "https://github.com/lifetrenz/page-flow/releases/latest/download/PageFlow-Setup.exe";
+/** The newest Windows installer (the per-machine MSI from 0.3.0), published as a GitHub release asset under a fixed name. */
+export declare const PAGE_FLOW_WINDOWS_INSTALLER_URL = "https://github.com/lifetrenz/page-flow/releases/latest/download/PageFlow-Setup.msi";
 /**
  * Which system the person is on. The browser's platform name is preferred. The user agent is the
  * fallback, and phones and tablets are not desktop systems, so they are 'unknown'.

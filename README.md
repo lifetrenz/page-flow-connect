@@ -222,7 +222,7 @@ Every failure is a `PageFlowError`. Show `error.message`, which is written for p
 | `not_paired` | Open Agent Settings and enter the pairing token. |
 | `agent_unreachable` | Start the Page-Flow agent on this computer, then retry. |
 | `agent_timeout` | The agent did not reply in 240 seconds. Retry. |
-| `device_unavailable` | Check the scanner is switched on, then retry. |
+| `device_unavailable` | Check the device is switched on and on this network, then retry. When `error.retryable` is false, do not retry: either the device answered in a way the agent does not understand, or the scanner's security certificate has changed. In both cases ask IT to check it. For a changed certificate `error.message` is "the scanner's certificate has changed; an admin must trust it in the console": an admin trusts the new certificate in the agent console (Devices, **Trust new certificate**) if the scanner was replaced or reset. The agent answers `device_unavailable` with HTTP 503 even when `retryable` is false, so decide on `error.retryable`, never on the status, before retrying. |
 | `scanner_busy` | Wait for the current scan to finish. |
 | `session_not_found` | The document expired. Start it again. |
 | `too_many_pages` | The document is full (50 pages). Finish it or start another. |
